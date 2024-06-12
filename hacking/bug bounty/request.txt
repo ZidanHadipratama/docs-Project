@@ -1,0 +1,16 @@
+POST /index.php HTTP/1.1
+Host: jupiter.challenges.picoctf.org:19593
+Content-Length: 19
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Origin: http://jupiter.challenges.picoctf.org:19593
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://jupiter.challenges.picoctf.org:19593/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-US,en;q=0.9
+Cookie: _ga=GA1.2.1734754090.1713874798; _ga_BSZFGM3NWK=GS1.1.1713874798.1.0.1713874846.0.0.0; PHPSESSID=3ud0t0ductsc765mrsdm20cim0; td_cookie=333267714
+Connection: close
+
+user=test&pass=test

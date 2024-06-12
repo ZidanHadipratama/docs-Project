@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read File and Store Content</title>
+</head>
+<body>
+    <script>
+        // Fetch the file content when the page loads
+        fetch('test.txt')
+            .then(response => response.text())
+            .then(fileContents => {
+                console.log("File contents:", fileContents);
+                // You can store the contents in a variable here if needed
+            })
+            .catch(error => {
+                console.error("Error fetching file:", error);
+            });
+    </script>
+</body>
+</html>

